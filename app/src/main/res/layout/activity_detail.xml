@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Gambar Utama -->
+        <ImageView
+            android:id="@+id/ivGambar"
+            android:layout_width="match_parent"
+            android:layout_height="220dp"
+            android:scaleType="centerCrop"
+            android:contentDescription="@string/image_desc"
+            android:background="@android:color/darker_gray"
+            android:adjustViewBounds="true" />
+
+        <!-- Judul Wisata -->
+        <TextView
+            android:id="@+id/tvNama"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/placeholder_name"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:layout_marginTop="12dp"
+            android:textColor="@android:color/black" />
+
+        <!-- TABS: Info | Galeri | Ulasan -->
+        <com.google.android.material.tabs.TabLayout
+            android:id="@+id/tabLayoutDetail"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            app:tabIndicatorColor="@color/purple_500"
+            app:tabSelectedTextColor="@color/purple_500"
+            app:tabTextColor="@android:color/darker_gray"
+            app:tabMode="fixed"
+            app:tabGravity="fill">
+
+            <com.google.android.material.tabs.TabItem
+                android:id="@+id/tabInfo"
+                android:text="Info" />
+
+            <com.google.android.material.tabs.TabItem
+                android:id="@+id/tabGaleri"
+                android:text="Galeri" />
+
+            <com.google.android.material.tabs.TabItem
+                android:id="@+id/tabUlasan"
+                android:text="Ulasan" />
+        </com.google.android.material.tabs.TabLayout>
+
+        <!-- Konten: Info, Galeri, Ulasan (kelola visibilitas) -->
+        <LinearLayout
+            android:id="@+id/contentContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="12dp">
+
+            <!-- Info (default) -->
+            <LinearLayout
+                android:id="@+id/infoContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- Lokasi + Tombol Maps -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:id="@+id/tvLokasi"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/placeholder_location"
+                        android:textSize="16sp"
+                        android:textColor="@android:color/darker_gray"
+                        android:clickable="true"
+                        android:focusable="true" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnOpenMaps"
+                        android:layout_width="wrap_content"
+                        android:layout_height="40dp"
+                        android:text="@string/open_in_maps"
+                        android:textAllCaps="false"
+                        android:layout_marginStart="8dp"
+                        app:iconPadding="6dp"
+                        app:iconGravity="textStart" />
+                </LinearLayout>
+
+                <!-- Rating & Harga -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="8dp">
+
+                    <RatingBar
+                        android:id="@+id/ratingBarDetail"
+                        style="?android:attr/ratingBarStyleSmall"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:numStars="5"
+                        android:stepSize="0.5"
+                        android:isIndicator="true" />
+
+                    <TextView
+                        android:id="@+id/tvRatingValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="4.5"
+                        android:textSize="14sp"
+                        android:textColor="@android:color/darker_gray" />
+
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="1dp"
+                        android:layout_weight="1" />
+
+                    <TextView
+                        android:id="@+id/tvPrice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text=""
+                        android:textStyle="bold"
+                        android:textSize="14sp" />
+                </LinearLayout>
+
+                <!-- Deskripsi -->
+                <TextView
+                    android:id="@+id/tvDeskripsi"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/placeholder_description"
+                    android:textSize="15sp"
+                    android:layout_marginTop="12dp"
+                    android:lineSpacingExtra="2dp" />
+
+                <!-- Catatan Tambahan -->
+                <TextView
+                    android:id="@+id/tvExtra"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text=""
+                    android:textSize="14sp"
+                    android:layout_marginTop="12dp"
+                    android:textStyle="italic" />
+            </LinearLayout>
+
+            <!-- Galeri (disembunyikan default) -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerGallery"
+                android:layout_width="match_parent"
+                android:layout_height="120dp"
+                android:layout_marginTop="12dp"
+                android:visibility="gone"
+                android:clipToPadding="false"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp"
+                android:nestedScrollingEnabled="false"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+            <!-- Ulasan placeholder -->
+            <LinearLayout
+                android:id="@+id/reviewsContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone"
+                android:layout_marginTop="12dp">
+                <!-- nanti isi RecyclerView komentar di sini -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Belum ada ulasan"
+                    android:gravity="center"
+                    android:padding="12dp"/>
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Spasi bawah -->
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="20dp" />
+
+    </LinearLayout>
+</ScrollView>

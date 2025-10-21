@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "779427736172",
+    "project_id": "wisatator",
+    "storage_bucket": "wisatator.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:779427736172:android:d0db7dc64d3ae64a3c0649",
+        "android_client_info": {
+          "package_name": "com.johendry.wisatator"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDDjlufc15_w3IYPCp7r_mh8qZ-6johgCM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

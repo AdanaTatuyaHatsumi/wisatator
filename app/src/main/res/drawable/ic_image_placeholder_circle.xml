@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- circular background -->
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="#FFECECEC"/>
+            <size android:width="64dp" android:height="64dp"/>
+        </shape>
+    </item>
+
+    <!-- center the vector placeholder (referencing the vector above) -->
+    <item android:gravity="center">
+        <bitmap
+            android:src="@drawable/ic_image_placeholder"
+            android:gravity="center"/>
+    </item>
+</layer-list>

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:card_view="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="12dp"
+    card_view:cardCornerRadius="16dp"
+    card_view:cardElevation="8dp"
+    card_view:cardUseCompatPadding="true">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <!-- Bagian gambar utama dengan overlay -->
+        <ImageView
+            android:id="@+id/ivWisataBig"
+            android:layout_width="match_parent"
+            android:layout_height="220dp"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_launcher_background"
+            android:contentDescription="@string/app_name" />
+
+        <!-- Overlay gradient agar teks lebih jelas di atas gambar -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="220dp"
+            android:background="@drawable/gradient_overlay_bottom" />
+
+        <!-- Kontainer teks -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignBottom="@id/ivWisataBig"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/tvNamaWisataBig"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Nama Wisata"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="@android:color/white"
+                android:ellipsize="end"
+                android:maxLines="2" />
+
+            <TextView
+                android:id="@+id/tvLokasiWisataBig"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Lokasi"
+                android:textSize="14sp"
+                android:textColor="@android:color/white"
+                android:layout_marginTop="2dp" />
+
+            <TextView
+                android:id="@+id/tvDeskripsiWisataBig"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Deskripsi singkat (lebih panjang untuk item utama)."
+                android:textSize="14sp"
+                android:textColor="@android:color/white"
+                android:layout_marginTop="6dp"
+                android:maxLines="3"
+                android:ellipsize="end" />
+        </LinearLayout>
+
+        <!-- Tombol lihat detail di pojok bawah -->
+        <TextView
+            android:id="@+id/btnLihatDetail"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_alignBottom="@id/ivWisataBig"
+            android:layout_margin="16dp"
+            android:background="@drawable/bg_button_round"
+            android:padding="8dp"
+            android:text="Lihat Detail"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+    </RelativeLayout>
+</androidx.cardview.widget.CardView>

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Wisatator</string>
+    <string name="logo_desc">Logo</string>
+
+    <!-- Login -->
+    <string name="login_title">Masuk ke Wisatator</string>
+    <string name="login_subtitle">Masukkan email dan password untuk melanjutkan</string>
+    <string name="email">Email</string>
+    <string name="password">Kata Sandi</string>
+    <string name="login_button">Masuk</string>
+    <string name="resend_verification">Kirim Ulang Verifikasi</string>
+    <string name="register_link">Belum punya akun? Daftar</string>
+    <string name="login_note">Pastikan email sudah terverifikasi sebelum masuk.</string>
+
+    <!-- Register -->
+    <string name="register_title">Daftar Akun</string>
+    <string name="register_subtitle">Buat akun untuk mulai menjelajah Tanah Toraja</string>
+    <string name="label_username">Username</string>
+    <string name="hint_username">Masukkan username</string>
+    <string name="label_email">Email</string>
+    <string name="hint_email">contoh@domain.com</string>
+    <string name="label_password">Password</string>
+    <string name="hint_password">Minimal 6 karakter</string>
+    <string name="register_button">Daftar</string>
+    <string name="register_login_link">Sudah punya akun? Masuk</string>
+    <string name="register_note">Catatan: setelah mendaftar, kamu akan menerima email verifikasi. Akun harus diverifikasi sebelum login.</string>
+
+    <!-- Sections / nav -->
+    <string name="penginapan">Penginapan</string>
+    <string name="kuliner">Kuliner</string>
+    <string name="wisata">Wisata</string>
+    <string name="semua">Semua</string>
+
+    <!-- UI / detail -->
+    <string name="image_desc" translatable="false">Gambar tempat</string>
+    <string name="placeholder_name" translatable="false">Nama Tempat</string>
+    <string name="placeholder_location" translatable="false">Lokasi Tempat</string>
+    <string name="open_in_maps">Buka di Maps</string>
+    <string name="placeholder_description" translatable="false">Deskripsi panjang mengenai tempat wisata, kuliner, atau penginapan.</string>
+    <string name="search">Search</string>
+
+    <string name="logout">Logout</string>
+    <string name="open_drawer">Buka menu</string>
+    <string name="close_drawer">Tutup menu</string>
+
+    <!-- Errors / toasts -->
+    <string name="gagal_memuat_wisata">Gagal memuat wisata</string>
+    <string name="gagal_memuat_kuliner">Gagal memuat kuliner</string>
+    <string name="gagal_memuat_penginapan">Gagal memuat penginapan</string>
+
+    <!-- Misc -->
+    <string name="halo_user">Selamat datang di Tanah Toraja, %1$s 👋</string>
+    <string name="detail">Detail</string>
+    <string name="rating">Rating</string>
+    <string name="harga_per_malam">Harga / malam</string>
+
+    <!-- Language selection -->
+    <string name="semua_bahasa">Pilih Bahasa</string>
+    <string name="bahasa_indonesia">Bahasa Indonesia</string>
+    <string name="bahasa_inggris">English</string>
+
+    <!-- Map / extras -->
+    <string name="lihat_di_maps">Lihat di Google Maps</string>
+
+    <string name="email_belum_terverifikasi">Email belum diverifikasi. Silakan periksa kotak masuk Anda.</string>
+    <string name="pengguna_fallback">Pengguna</string>
+
+
+</resources>

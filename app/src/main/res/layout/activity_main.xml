@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.drawerlayout.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/drawer_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <!-- Main content -->
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <!-- AppBar / Toolbar -->
+        <com.google.android.material.appbar.AppBarLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
+
+            <androidx.appcompat.widget.Toolbar
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                android:background="@color/maroon"
+                app:title="Wisatator"
+                app:titleTextColor="@android:color/white" />
+
+        </com.google.android.material.appbar.AppBarLayout>
+
+        <!-- Content: gunakan NestedScrollView supaya kompatibel dengan CoordinatorLayout -->
+        <androidx.core.widget.NestedScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginTop="?attr/actionBarSize"
+            android:fillViewport="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <!-- Greeting + Logout -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="12dp">
+
+                    <TextView
+                        android:id="@+id/tvGreeting"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Halo, User"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <!--Button
+                        android:id="@+id/btnLogout"
+                        android:layout_width="wrap_content"
+                        android:layout_height="40dp"
+                        android:text="Logout"
+                        android:layout_marginStart="12dp" /-->
+                </LinearLayout>
+
+
+                <!-- ===== Section Wisata (big + horizontal small) ===== -->
+                <LinearLayout
+                    android:id="@+id/section_wisata_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingBottom="8dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/wisata"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="8dp" />
+
+                    <!-- Big item -->
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/cardWisataBig"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="6dp">
+
+                        <RelativeLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <!-- Bagian gambar utama dengan overlay -->
+                            <ImageView
+                                android:id="@+id/ivWisataBig"
+                                android:layout_width="match_parent"
+                                android:layout_height="220dp"
+                                android:scaleType="centerCrop"
+                                android:src="@drawable/ic_launcher_background"
+                                android:contentDescription="@string/app_name" />
+
+                            <!-- Overlay gradient agar teks lebih jelas di atas gambar -->
+                            <View
+                                android:layout_width="match_parent"
+                                android:layout_height="220dp"
+                                android:background="@drawable/gradient_overlay_bottom" />
+
+                            <!-- Kontainer teks -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_alignBottom="@id/ivWisataBig"
+                                android:orientation="vertical"
+                                android:padding="16dp">
+
+                                <TextView
+                                    android:id="@+id/tvNamaWisataBig"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="Nama Wisata"
+                                    android:textSize="20sp"
+                                    android:textStyle="bold"
+                                    android:textColor="@android:color/white"
+                                    android:ellipsize="end"
+                                    android:maxLines="2" />
+
+                                <TextView
+                                    android:id="@+id/tvLokasiWisataBig"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="Lokasi"
+                                    android:textSize="14sp"
+                                    android:textColor="@android:color/white"
+                                    android:layout_marginTop="2dp" />
+
+                                <TextView
+                                    android:id="@+id/tvDeskripsiWisataBig"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="Deskripsi singkat (lebih panjang untuk item utama)."
+                                    android:textSize="14sp"
+                                    android:textColor="@android:color/white"
+                                    android:layout_marginTop="6dp"
+                                    android:maxLines="3"
+                                    android:ellipsize="end" />
+                            </LinearLayout>
+
+                            <!-- Tombol lihat detail di pojok bawah -->
+                            <!--TextView
+                                android:id="@+id/btnLihatDetail"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentEnd="true"
+                                android:layout_alignBottom="@id/ivWisataBig"
+                                android:layout_margin="16dp"
+                                android:background="@drawable/bg_button_round"
+                                android:padding="8dp"
+                                android:text="Lihat Detail"
+                                android:textColor="@android:color/white"
+                                android:textSize="12sp" /-->
+
+                        </RelativeLayout>
+                    </androidx.cardview.widget.CardView>
+
+                    <!-- Horizontal small list -->
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/recyclerWisataSmall"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:overScrollMode="never"
+                        android:clipToPadding="false"
+                        android:paddingTop="4dp"
+                        android:paddingBottom="6dp" />
+                </LinearLayout>
+
+                <!-- ===== Section Kuliner ===== -->
+                <LinearLayout
+                    android:id="@+id/section_kuliner_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginTop="8dp">
+
+                    <TextView
+                        android:id="@+id/label_kuliner"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/kuliner"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:layout_marginTop="8dp" />
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/recyclerKuliner"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp" />
+                </LinearLayout>
+
+                <!-- ===== Section Penginapan ===== -->
+                <LinearLayout
+                    android:id="@+id/section_penginapan_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginTop="12dp">
+
+                    <TextView
+                        android:id="@+id/label_penginapan"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/penginapan"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:layout_marginTop="8dp" />
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/recyclerPenginapan"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp" />
+                </LinearLayout>
+
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+    <com.google.android.material.navigation.NavigationView
+        android:id="@+id/navigation_view"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        app:menu="@menu/nav_menu"
+        app:headerLayout="@layout/nav_header" />
+
+
+
+</androidx.drawerlayout.widget.DrawerLayout>
