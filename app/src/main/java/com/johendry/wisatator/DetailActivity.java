@@ -47,12 +47,10 @@ public class DetailActivity extends AppCompatActivity {
 
     private Object currentModel;
 
-    // Firestore & Gallery
     private FirebaseFirestore firestore;
     private RecyclerView recyclerGallery;
     private GalleryAdapter galleryAdapter;
 
-    // extras untuk fetch dari Firestore (pakai pendekatan array images)
     public static final String EXTRA_COLLECTION = "extra_collection";
     public static final String EXTRA_DOCID = "extra_docid";
 
@@ -60,9 +58,7 @@ public class DetailActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detail);
-        Log.d(TAG, "onCreate");
 
-        // init views
         ivGambar = findViewById(R.id.ivGambar);
         tvNama = findViewById(R.id.tvNama);
         tvLokasi = findViewById(R.id.tvLokasi);
@@ -73,10 +69,9 @@ public class DetailActivity extends AppCompatActivity {
         tvPrice = findViewById(R.id.tvPrice);
         btnOpenMaps = findViewById(R.id.btnOpenMaps);
 
-        // init firestore
         firestore = FirebaseFirestore.getInstance();
 
-        // init recycler & adapter
+        // init RecyclerView (pastikan id recyclerGallery ada di layout dan height bukan wrap_content)
         recyclerGallery = findViewById(R.id.recyclerGallery);
         if (recyclerGallery != null) {
             LinearLayoutManager lm = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
@@ -86,12 +81,12 @@ public class DetailActivity extends AppCompatActivity {
             galleryAdapter = new GalleryAdapter(this, new ArrayList<>());
             recyclerGallery.setAdapter(galleryAdapter);
             recyclerGallery.setVisibility(View.GONE);
-            Log.d(TAG, "RecyclerView and adapter initialized");
+            Log.d(TAG, "Recycler + adapter initialized");
         } else {
-            Log.w(TAG, "recyclerGallery not found in layout");
+            Log.w(TAG, "recyclerGallery NOT FOUND in layout");
         }
 
-        // Accept model/extras
+        // ambil intent / model
         Object wisata = getIntent().getSerializableExtra("wisata");
         Object kuliner = getIntent().getSerializableExtra("kuliner");
         Object penginapan = getIntent().getSerializableExtra("penginapan");
@@ -126,7 +121,7 @@ public class DetailActivity extends AppCompatActivity {
             tvExtra.setText("");
         }
 
-        // TabLayout listener
+        // TabLayout
         TabLayout tabLayout = findViewById(R.id.tabLayoutDetail);
         if (tabLayout != null) {
             tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
@@ -134,7 +129,7 @@ public class DetailActivity extends AppCompatActivity {
                     switch (tab.getPosition()) {
                         case 0: showInfoTab(); break;
                         case 1: showGalleryTab(); break;
-                        case 2: showReviewsTab(); break;
+
                     }
                 }
                 @Override public void onTabUnselected(TabLayout.Tab tab) {}
@@ -142,13 +137,10 @@ public class DetailActivity extends AppCompatActivity {
             });
         }
 
-        // default info
-        showInfoTab();
-
-        // PREFETCH gallery: model -> intent -> firestore
+        // prefetch gallery from model -> intent extras -> firestore
         ArrayList<String> fromModel = getImageListFromModel(currentModel);
         if (!fromModel.isEmpty()) {
-            Log.d(TAG, "Prefetch: images found in model: size=" + fromModel.size());
+            Log.d(TAG, "Prefetch from model size=" + fromModel.size());
             updateGallery(fromModel);
         } else {
             String collection = firstNonNullExtra(EXTRA_COLLECTION, "collection", "coll", "type");
@@ -157,29 +149,20 @@ public class DetailActivity extends AppCompatActivity {
                 Log.d(TAG, "Prefetch gallery from Firestore: " + collection + "/" + docId);
                 fetchImagesFromFirestore(collection, docId);
             } else {
-                // fallback: single image extra
                 String main = firstNonNullExtra("imageUrl", "image", "mainImage", "photo");
                 if (main != null && !main.trim().isEmpty()) {
                     ArrayList<String> tmp = new ArrayList<>();
-                    tmp.add(main.trim());
+                    tmp.add(normalizeDriveUrl(main.trim()));
                     updateGallery(tmp);
                 } else {
                     Log.d(TAG, "No gallery source found");
                 }
             }
         }
-        // DEBUG TEMP: coba set secara manual 3 gambar (gunakan versi uc?export=view untuk Drive)
-        ArrayList<String> debugTest = new ArrayList<>();
-        debugTest.add("https://drive.google.com/uc?export=view&id=1UXtmRuHgJ6_OpTDOmRXeL1bUc7VjPu19");
-        debugTest.add("https://drive.google.com/uc?export=view&id=1Pl1HsqVj_nSHg2IGg9EqYYNjPiO4oI94");
-        debugTest.add("https://drive.google.com/uc?export=view&id=1hI5pGvl7GNyhv-mKqBLP0Z2bg_QWYzPA");
-        galleryAdapter.setItems(debugTest);
-        recyclerGallery.setVisibility(View.VISIBLE);
-        Toast.makeText(this, "DEBUG gallery size: " + galleryAdapter.getItemCount(), Toast.LENGTH_LONG).show();
 
+        showInfoTab();
     }
 
-    // helper utk beberapa kunci intent
     private String firstNonNullExtra(String... keys) {
         Intent intent = getIntent();
         for (String k : keys) {
@@ -318,7 +301,6 @@ public class DetailActivity extends AppCompatActivity {
         }
     }
 
-    // load image utama from model if model exposes list or string
     private void loadImageFromModel(Object model) {
         if (model == null) {
             ivGambar.setImageResource(R.drawable.ic_image_placeholder);
@@ -337,16 +319,13 @@ public class DetailActivity extends AppCompatActivity {
                 List<?> l = (List<?>) res;
                 if (!l.isEmpty()) {
                     ArrayList<String> arr = new ArrayList<>();
-                    for (Object o : l) if (o != null) arr.add(String.valueOf(o));
-                    Log.d(TAG, "loadImageFromModel found list size=" + arr.size());
+                    for (Object o : l) if (o != null) arr.add(normalizeDriveUrl(String.valueOf(o)));
                     updateGallery(arr);
                     loadImage(arr.get(0));
                     return;
                 }
             }
-        } catch (NoSuchMethodException ignored) {} catch (Exception e) {
-            Log.w(TAG, "error calling getImageUrl() on model: " + e.getMessage(), e);
-        }
+        } catch (NoSuchMethodException ignored) {} catch (Exception e) { Log.w(TAG, "error calling getImageUrl() on model: " + e.getMessage(), e); }
         ivGambar.setImageResource(R.drawable.ic_image_placeholder);
     }
 
@@ -356,40 +335,11 @@ public class DetailActivity extends AppCompatActivity {
             return;
         }
         String normalized = normalizeDriveUrl(url);
-        Log.d(TAG, "loadImage -> normalized: " + normalized);
         Glide.with(this)
                 .load(normalized)
                 .placeholder(R.drawable.ic_image_placeholder)
                 .error(R.drawable.ic_image_placeholder)
                 .into(ivGambar);
-    }
-
-    // reflection helpers
-    private String safeGetString(Object obj, String methodName) {
-        try {
-            Method m = obj.getClass().getMethod(methodName);
-            Object r = m.invoke(obj);
-            return r != null ? String.valueOf(r) : null;
-        } catch (Exception ignored) {}
-        return null;
-    }
-    private Double safeGetDouble(Object obj, String methodName) {
-        try {
-            Method m = obj.getClass().getMethod(methodName);
-            Object r = m.invoke(obj);
-            if (r instanceof Number) return ((Number) r).doubleValue();
-            if (r instanceof String) { try { return Double.parseDouble(((String) r).trim()); } catch (NumberFormatException ignored) {} }
-        } catch (Exception ignored) {}
-        return null;
-    }
-    private Integer safeGetInt(Object obj, String methodName) {
-        try {
-            Method m = obj.getClass().getMethod(methodName);
-            Object r = m.invoke(obj);
-            if (r instanceof Number) return ((Number) r).intValue();
-            if (r instanceof String) { try { return Integer.parseInt(((String) r).trim()); } catch (NumberFormatException ignored) {} }
-        } catch (Exception ignored) {}
-        return null;
     }
 
     private ArrayList<String> getImageListFromModel(Object model) {
@@ -402,7 +352,7 @@ public class DetailActivity extends AppCompatActivity {
                     Method m = model.getClass().getMethod(mn);
                     Object r = m.invoke(model);
                     if (r instanceof List) {
-                        for (Object o : (List<?>) r) if (o != null) out.add(String.valueOf(o));
+                        for (Object o : (List<?>) r) if (o != null) out.add(normalizeDriveUrl(String.valueOf(o)));
                         if (!out.isEmpty()) return out;
                     }
                 } catch (NoSuchMethodException ignored) {}
@@ -413,7 +363,7 @@ public class DetailActivity extends AppCompatActivity {
                     f.setAccessible(true);
                     Object val = f.get(model);
                     if (val instanceof List) {
-                        for (Object o : (List<?>) val) if (o != null) out.add(String.valueOf(o));
+                        for (Object o : (List<?>) val) if (o != null) out.add(normalizeDriveUrl(String.valueOf(o)));
                         if (!out.isEmpty()) return out;
                     }
                 } catch (Exception ignored) {}
@@ -422,7 +372,7 @@ public class DetailActivity extends AppCompatActivity {
                 try {
                     Method mi = model.getClass().getMethod("getImage"+i);
                     Object r = mi.invoke(model);
-                    if (r != null) out.add(String.valueOf(r));
+                    if (r != null) out.add(normalizeDriveUrl(String.valueOf(r)));
                 } catch (NoSuchMethodException ignored) {}
             }
         } catch (Exception e) {
@@ -431,35 +381,29 @@ public class DetailActivity extends AppCompatActivity {
         return out;
     }
 
-    // normalize drive links
+    // normalize Drive link -> try direct download/view endpoint
     private String normalizeDriveUrl(String input) {
         if (input == null) return null;
         input = input.trim();
-        if (input.contains("drive.google.com/uc?export=view")) return input;
+        if (input.contains("drive.google.com/uc?export=view") || input.contains("drive.google.com/uc?export=download")) return input;
         Pattern p = Pattern.compile("/d/([a-zA-Z0-9_-]+)");
         Matcher m = p.matcher(input);
-        if (m.find()) return "https://drive.google.com/uc?export=view&id=" + m.group(1);
+        if (m.find()) return "https://drive.google.com/uc?export=download&id=" + m.group(1);
         p = Pattern.compile("[?&]id=([a-zA-Z0-9_-]+)");
         m = p.matcher(input);
-        if (m.find()) return "https://drive.google.com/uc?export=view&id=" + m.group(1);
+        if (m.find()) return "https://drive.google.com/uc?export=download&id=" + m.group(1);
         p = Pattern.compile("open\\?id=([a-zA-Z0-9_-]+)");
         m = p.matcher(input);
-        if (m.find()) return "https://drive.google.com/uc?export=view&id=" + m.group(1);
+        if (m.find()) return "https://drive.google.com/uc?export=download&id=" + m.group(1);
         return input;
     }
 
-    // fetch images from Firestore and LOG everything
     private void fetchImagesFromFirestore(@NonNull String collection, @NonNull String docId) {
         Log.d(TAG, "fetchImagesFromFirestore -> collection=" + collection + " docId=" + docId);
-        if (collection == null || docId == null) {
-            Log.w(TAG, "fetchImagesFromFirestore: collection/docId null");
-            return;
-        }
-
         firestore.collection(collection).document(docId)
                 .get()
                 .addOnSuccessListener((DocumentSnapshot documentSnapshot) -> {
-                    Log.d(TAG, "Firestore document fetched: exists=" + documentSnapshot.exists());
+                    Log.d(TAG, "Firestore doc fetched, exists=" + documentSnapshot.exists());
                     if (!documentSnapshot.exists()) {
                         Toast.makeText(DetailActivity.this, "Data tidak ditemukan.", Toast.LENGTH_SHORT).show();
                         return;
@@ -467,68 +411,46 @@ public class DetailActivity extends AppCompatActivity {
 
                     ArrayList<String> urls = new ArrayList<>();
 
-                    // coba ambil imageUrl field (array or string)
                     Object main = documentSnapshot.get("imageUrl");
                     Log.d(TAG, "raw imageUrl field class=" + (main != null ? main.getClass().getSimpleName() : "null") + " value=" + String.valueOf(main));
                     if (main instanceof List) {
                         for (Object o : (List<?>) main) {
                             if (o == null) continue;
                             String s = String.valueOf(o).trim();
-                            if (!s.isEmpty()) {
-                                String n = normalizeDriveUrl(s);
-                                Log.d(TAG, "parsed imageUrl item -> " + n);
-                                urls.add(n);
-                            }
+                            if (!s.isEmpty()) urls.add(normalizeDriveUrl(s));
                         }
                     } else if (main instanceof String) {
                         String s = ((String) main).trim();
                         if (s.startsWith("[") && s.endsWith("]")) {
                             try {
                                 JSONArray ja = new JSONArray(s);
-                                for (int i = 0; i < ja.length(); i++) {
+                                for (int i=0;i<ja.length();i++){
                                     String u = ja.optString(i, null);
-                                    if (u != null && !u.trim().isEmpty()) {
-                                        String n = normalizeDriveUrl(u);
-                                        Log.d(TAG, "parsed imageUrl (json-array) -> " + n);
-                                        urls.add(n);
-                                    }
+                                    if (u != null && !u.trim().isEmpty()) urls.add(normalizeDriveUrl(u));
                                 }
                             } catch (JSONException je) {
-                                String n = normalizeDriveUrl(s);
-                                Log.d(TAG, "parsed imageUrl (string) -> " + n);
-                                urls.add(n);
+                                if (!s.isEmpty()) urls.add(normalizeDriveUrl(s));
                             }
                         } else {
-                            String n = normalizeDriveUrl(s);
-                            Log.d(TAG, "parsed imageUrl (string) -> " + n);
-                            urls.add(n);
+                            if (!s.isEmpty()) urls.add(normalizeDriveUrl(s));
                         }
                     }
 
-                    // fallback: cek field 'images'
                     if (urls.isEmpty()) {
                         Object imagesField = documentSnapshot.get("images");
-                        Log.d(TAG, "raw images field class=" + (imagesField != null ? imagesField.getClass().getSimpleName() : "null") + " value=" + String.valueOf(imagesField));
                         if (imagesField instanceof List) {
                             for (Object o : (List<?>) imagesField) {
                                 if (o == null) continue;
                                 String s = String.valueOf(o).trim();
-                                if (!s.isEmpty()) {
-                                    String n = normalizeDriveUrl(s);
-                                    Log.d(TAG, "parsed images item -> " + n);
-                                    urls.add(n);
-                                }
+                                if (!s.isEmpty()) urls.add(normalizeDriveUrl(s));
                             }
                         }
                     }
 
                     Log.d(TAG, "urls collected before dedup size=" + urls.size());
-                    for (int i = 0; i < urls.size(); i++) {
-                        Log.d(TAG, "urls[" + i + "] = " + urls.get(i));
-                    }
+                    for (int i=0;i<urls.size();i++) Log.d(TAG, "urls[" + i + "] = " + urls.get(i));
 
                     if (!urls.isEmpty()) {
-                        // remove duplicates but preserve order
                         Set<String> dedup = new LinkedHashSet<>(urls);
                         ArrayList<String> finalList = new ArrayList<>(dedup);
                         Log.d(TAG, "finalList size after dedup=" + finalList.size());
@@ -544,20 +466,17 @@ public class DetailActivity extends AppCompatActivity {
                 });
     }
 
-    // update gallery UI: gunakan adapter.setItems dan log ukuran
     private void updateGallery(ArrayList<String> urls) {
         Log.d(TAG, "updateGallery called with urls.size=" + (urls != null ? urls.size() : 0));
         if (recyclerGallery == null || galleryAdapter == null) {
-            Log.w(TAG, "updateGallery: recyclerGallery or adapter null");
+            Log.w(TAG, "updateGallery: recycler or adapter null");
             return;
         }
         runOnUiThread(() -> {
             galleryAdapter.setItems(urls);
             recyclerGallery.setVisibility(urls.isEmpty() ? View.GONE : View.VISIBLE);
-            Log.d(TAG, "adapter.getItemCount() after setItems = " + galleryAdapter.getItemCount());
-            // hide info container if any
-            View info = findViewById(R.id.contentContainer);
-            if (info != null) info.setVisibility(View.GONE);
+            Log.d(TAG, "adapter itemCount after setItems = " + galleryAdapter.getItemCount());
+            if (galleryAdapter.getItemCount() == 0) Toast.makeText(this, "Gallery empty after setItems", Toast.LENGTH_LONG).show();
         });
     }
 
@@ -574,8 +493,6 @@ public class DetailActivity extends AppCompatActivity {
             recyclerGallery.setVisibility(View.VISIBLE);
             View info = findViewById(R.id.contentContainer);
             if (info != null) info.setVisibility(View.GONE);
-            View reviews = findViewById(R.id.reviewsContainer);
-            if (reviews != null) reviews.setVisibility(View.GONE);
             return;
         }
         String collection = firstNonNullExtra(EXTRA_COLLECTION, "collection", "coll");
@@ -589,15 +506,6 @@ public class DetailActivity extends AppCompatActivity {
         }
     }
 
-    private void showReviewsTab() {
-        if (recyclerGallery != null) recyclerGallery.setVisibility(View.GONE);
-        View info = findViewById(R.id.contentContainer);
-        if (info != null) info.setVisibility(View.GONE);
-        View reviews = findViewById(R.id.reviewsContainer);
-        if (reviews != null) reviews.setVisibility(View.VISIBLE);
-        Toast.makeText(this, "Tab Ulasan belum diimplementasikan.", Toast.LENGTH_SHORT).show();
-    }
-
     private String formatPrice(int price) {
         try {
             NumberFormat nf = NumberFormat.getInstance(Locale.getDefault());
@@ -606,5 +514,37 @@ public class DetailActivity extends AppCompatActivity {
             return s;
         } catch (Exception ignored) {}
         return String.valueOf(price);
+    }
+
+    // reflection helpers
+    private String safeGetString(Object obj, String methodName) {
+        try {
+            Method m = obj.getClass().getMethod(methodName);
+            Object r = m.invoke(obj);
+            return r != null ? String.valueOf(r) : null;
+        } catch (Exception ignored) {}
+        return null;
+    }
+    private Double safeGetDouble(Object obj, String methodName) {
+        try {
+            Method m = obj.getClass().getMethod(methodName);
+            Object r = m.invoke(obj);
+            if (r instanceof Number) return ((Number) r).doubleValue();
+            if (r instanceof String) {
+                try { return Double.parseDouble(((String) r).trim()); } catch (NumberFormatException ignored) {}
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
+    private Integer safeGetInt(Object obj, String methodName) {
+        try {
+            Method m = obj.getClass().getMethod(methodName);
+            Object r = m.invoke(obj);
+            if (r instanceof Number) return ((Number) r).intValue();
+            if (r instanceof String) {
+                try { return Integer.parseInt(((String) r).trim()); } catch (NumberFormatException ignored) {}
+            }
+        } catch (Exception ignored) {}
+        return null;
     }
 }

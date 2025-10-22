@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:card="http://schemas.android.com/apk/res-auto"
-    android:layout_width="88dp"
+    android:layout_width="120dp"
     android:layout_height="match_parent"
     android:layout_margin="6dp"
     card:cardCornerRadius="6dp"
-    card:cardElevation="3dp">
+    card:cardElevation="2dp">
 
     <ImageView
         android:id="@+id/ivThumb"
@@ -13,6 +13,5 @@
         android:layout_height="match_parent"
         android:scaleType="centerCrop"
         android:contentDescription="@string/image_desc"
-        android:background="@drawable/ic_image_placeholder" />
-
+        android:adjustViewBounds="true" />
 </androidx.cardview.widget.CardView>
