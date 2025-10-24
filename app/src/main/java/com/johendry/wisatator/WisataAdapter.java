@@ -79,6 +79,11 @@ public class WisataAdapter extends RecyclerView.Adapter<WisataAdapter.ViewHolder
         holder.itemView.setOnClickListener(v -> {
             Intent i = new Intent(context, DetailActivity.class);
             i.putExtra("wisata", w);
+
+            // 🔥 TAMBAHKAN INI
+            i.putExtra(DetailActivity.EXTRA_COLLECTION, "wisata");
+            i.putExtra(DetailActivity.EXTRA_DOCID, w.getId());
+
             if (!TextUtils.isEmpty(w.getImageUrl())) {
                 i.putExtra("imageUrl", normalizeDriveUrl(w.getImageUrl()));
             }

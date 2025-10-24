@@ -47,6 +47,7 @@ public class DetailActivity extends AppCompatActivity {
 
     private Object currentModel;
 
+    // Firestore & Gallery
     private FirebaseFirestore firestore;
     private RecyclerView recyclerGallery;
     private GalleryAdapter galleryAdapter;
@@ -58,6 +59,7 @@ public class DetailActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detail);
+        Log.d(TAG, "onCreate");
 
         ivGambar = findViewById(R.id.ivGambar);
         tvNama = findViewById(R.id.tvNama);
@@ -71,7 +73,6 @@ public class DetailActivity extends AppCompatActivity {
 
         firestore = FirebaseFirestore.getInstance();
 
-        // init RecyclerView (pastikan id recyclerGallery ada di layout dan height bukan wrap_content)
         recyclerGallery = findViewById(R.id.recyclerGallery);
         if (recyclerGallery != null) {
             LinearLayoutManager lm = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
@@ -81,31 +82,30 @@ public class DetailActivity extends AppCompatActivity {
             galleryAdapter = new GalleryAdapter(this, new ArrayList<>());
             recyclerGallery.setAdapter(galleryAdapter);
             recyclerGallery.setVisibility(View.GONE);
-            Log.d(TAG, "Recycler + adapter initialized");
+            Log.d(TAG, "RecyclerView and adapter initialized");
         } else {
-            Log.w(TAG, "recyclerGallery NOT FOUND in layout");
+            Log.w(TAG, "recyclerGallery not found in layout");
         }
 
-        // ambil intent / model
+        // Debug extras
+        Intent i = getIntent();
+        if (i != null && i.getExtras() != null) {
+            for (String k : i.getExtras().keySet()) {
+                Log.d(TAG, "Intent extra [" + k + "] = " + String.valueOf(i.getExtras().get(k)));
+            }
+        }
+
         Object wisata = getIntent().getSerializableExtra("wisata");
         Object kuliner = getIntent().getSerializableExtra("kuliner");
         Object penginapan = getIntent().getSerializableExtra("penginapan");
         String extraImageUrl = getIntent().getStringExtra("imageUrl");
 
-        if (extraImageUrl != null && !extraImageUrl.trim().isEmpty()) {
-            loadImage(extraImageUrl);
-        }
+        if (extraImageUrl != null && !extraImageUrl.trim().isEmpty()) loadImage(extraImageUrl);
 
-        if (wisata != null) {
-            currentModel = wisata;
-            bindWisata(wisata, extraImageUrl);
-        } else if (kuliner != null) {
-            currentModel = kuliner;
-            bindKuliner(kuliner, extraImageUrl);
-        } else if (penginapan != null) {
-            currentModel = penginapan;
-            bindPenginapan(penginapan, extraImageUrl);
-        } else {
+        if (wisata != null) { currentModel = wisata; bindWisata(wisata, extraImageUrl); }
+        else if (kuliner != null) { currentModel = kuliner; bindKuliner(kuliner, extraImageUrl); }
+        else if (penginapan != null) { currentModel = penginapan; bindPenginapan(penginapan, extraImageUrl); }
+        else {
             String name = getIntent().getStringExtra("name");
             String lokasi = getIntent().getStringExtra("lokasi");
             String desc = getIntent().getStringExtra("description");
@@ -121,7 +121,6 @@ public class DetailActivity extends AppCompatActivity {
             tvExtra.setText("");
         }
 
-        // TabLayout
         TabLayout tabLayout = findViewById(R.id.tabLayoutDetail);
         if (tabLayout != null) {
             tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
@@ -129,7 +128,7 @@ public class DetailActivity extends AppCompatActivity {
                     switch (tab.getPosition()) {
                         case 0: showInfoTab(); break;
                         case 1: showGalleryTab(); break;
-
+                        case 2: showReviewsTab(); break;
                     }
                 }
                 @Override public void onTabUnselected(TabLayout.Tab tab) {}
@@ -137,11 +136,16 @@ public class DetailActivity extends AppCompatActivity {
             });
         }
 
-        // prefetch gallery from model -> intent extras -> firestore
+        showInfoTab();
+
+        // PREFETCH gallery: model -> intent -> firestore
         ArrayList<String> fromModel = getImageListFromModel(currentModel);
         if (!fromModel.isEmpty()) {
-            Log.d(TAG, "Prefetch from model size=" + fromModel.size());
-            updateGallery(fromModel);
+            Log.d(TAG, "Prefetch: images found in model: size=" + fromModel.size());
+            // normalisasi drive links
+            ArrayList<String> norm = new ArrayList<>();
+            for (String u : fromModel) norm.add(normalizeDriveUrl(u));
+            updateGallery(norm);
         } else {
             String collection = firstNonNullExtra(EXTRA_COLLECTION, "collection", "coll", "type");
             String docId = firstNonNullExtra(EXTRA_DOCID, "docId", "doc_id", "id", "documentId");
@@ -149,22 +153,28 @@ public class DetailActivity extends AppCompatActivity {
                 Log.d(TAG, "Prefetch gallery from Firestore: " + collection + "/" + docId);
                 fetchImagesFromFirestore(collection, docId);
             } else {
-                String main = firstNonNullExtra("imageUrl", "image", "mainImage", "photo");
-                if (main != null && !main.trim().isEmpty()) {
-                    ArrayList<String> tmp = new ArrayList<>();
-                    tmp.add(normalizeDriveUrl(main.trim()));
-                    updateGallery(tmp);
+                ArrayList<String> imgsFromIntent = getIntent().getStringArrayListExtra("images");
+                if (imgsFromIntent != null && !imgsFromIntent.isEmpty()) {
+                    ArrayList<String> norm = new ArrayList<>();
+                    for (String u : imgsFromIntent) norm.add(normalizeDriveUrl(u));
+                    updateGallery(norm);
                 } else {
-                    Log.d(TAG, "No gallery source found");
+                    String main = firstNonNullExtra("imageUrl", "image", "mainImage", "photo");
+                    if (main != null && !main.trim().isEmpty()) {
+                        ArrayList<String> tmp = new ArrayList<>();
+                        tmp.add(normalizeDriveUrl(main.trim()));
+                        updateGallery(tmp);
+                    } else {
+                        Log.d(TAG, "No gallery source found");
+                    }
                 }
             }
         }
-
-        showInfoTab();
     }
 
     private String firstNonNullExtra(String... keys) {
         Intent intent = getIntent();
+        if (intent == null) return null;
         for (String k : keys) {
             if (intent.hasExtra(k)) {
                 String v = intent.getStringExtra(k);
@@ -186,9 +196,7 @@ public class DetailActivity extends AppCompatActivity {
         tvDeskripsi.setText(deskripsi != null ? deskripsi : "");
         tvExtra.setText("");
 
-        if (extraImageUrl == null || extraImageUrl.trim().isEmpty()) {
-            loadImageFromModel(wisata);
-        }
+        if (extraImageUrl == null || extraImageUrl.trim().isEmpty()) loadImageFromModel(wisata);
 
         Double maybeRating = safeGetDouble(wisata, "getRating");
         if (maybeRating != null && maybeRating > 0) setRating(maybeRating);
@@ -214,9 +222,7 @@ public class DetailActivity extends AppCompatActivity {
         if (rating != null && rating > 0) extra += (extra.isEmpty() ? "" : "\n") + "Rating: " + rating;
         tvExtra.setText(extra);
 
-        if (extraImageUrl == null || extraImageUrl.trim().isEmpty()) {
-            loadImageFromModel(kuliner);
-        }
+        if (extraImageUrl == null || extraImageUrl.trim().isEmpty()) loadImageFromModel(kuliner);
 
         if (rating != null && rating > 0) setRating(rating);
         else { ratingBar.setVisibility(View.GONE); tvRatingValue.setVisibility(View.GONE); }
@@ -246,9 +252,7 @@ public class DetailActivity extends AppCompatActivity {
         }
         tvExtra.setText(extra);
 
-        if (extraImageUrl == null || extraImageUrl.trim().isEmpty()) {
-            loadImageFromModel(penginapan);
-        }
+        if (extraImageUrl == null || extraImageUrl.trim().isEmpty()) loadImageFromModel(penginapan);
 
         if (rating != null && rating > 0) setRating(rating);
         else { ratingBar.setVisibility(View.GONE); tvRatingValue.setVisibility(View.GONE); }
@@ -301,6 +305,7 @@ public class DetailActivity extends AppCompatActivity {
         }
     }
 
+    // load image utama from model if model exposes list or string
     private void loadImageFromModel(Object model) {
         if (model == null) {
             ivGambar.setImageResource(R.drawable.ic_image_placeholder);
@@ -320,12 +325,15 @@ public class DetailActivity extends AppCompatActivity {
                 if (!l.isEmpty()) {
                     ArrayList<String> arr = new ArrayList<>();
                     for (Object o : l) if (o != null) arr.add(normalizeDriveUrl(String.valueOf(o)));
+                    Log.d(TAG, "loadImageFromModel found list size=" + arr.size());
                     updateGallery(arr);
                     loadImage(arr.get(0));
                     return;
                 }
             }
-        } catch (NoSuchMethodException ignored) {} catch (Exception e) { Log.w(TAG, "error calling getImageUrl() on model: " + e.getMessage(), e); }
+        } catch (NoSuchMethodException ignored) {} catch (Exception e) {
+            Log.w(TAG, "error calling getImageUrl() on model: " + e.getMessage(), e);
+        }
         ivGambar.setImageResource(R.drawable.ic_image_placeholder);
     }
 
@@ -335,11 +343,39 @@ public class DetailActivity extends AppCompatActivity {
             return;
         }
         String normalized = normalizeDriveUrl(url);
+        Log.d(TAG, "loadImage -> normalized: " + normalized);
         Glide.with(this)
                 .load(normalized)
                 .placeholder(R.drawable.ic_image_placeholder)
                 .error(R.drawable.ic_image_placeholder)
                 .into(ivGambar);
+    }
+
+    private String safeGetString(Object obj, String methodName) {
+        try {
+            Method m = obj.getClass().getMethod(methodName);
+            Object r = m.invoke(obj);
+            return r != null ? String.valueOf(r) : null;
+        } catch (Exception ignored) {}
+        return null;
+    }
+    private Double safeGetDouble(Object obj, String methodName) {
+        try {
+            Method m = obj.getClass().getMethod(methodName);
+            Object r = m.invoke(obj);
+            if (r instanceof Number) return ((Number) r).doubleValue();
+            if (r instanceof String) { try { return Double.parseDouble(((String) r).trim()); } catch (NumberFormatException ignored) {} }
+        } catch (Exception ignored) {}
+        return null;
+    }
+    private Integer safeGetInt(Object obj, String methodName) {
+        try {
+            Method m = obj.getClass().getMethod(methodName);
+            Object r = m.invoke(obj);
+            if (r instanceof Number) return ((Number) r).intValue();
+            if (r instanceof String) { try { return Integer.parseInt(((String) r).trim()); } catch (NumberFormatException ignored) {} }
+        } catch (Exception ignored) {}
+        return null;
     }
 
     private ArrayList<String> getImageListFromModel(Object model) {
@@ -352,7 +388,7 @@ public class DetailActivity extends AppCompatActivity {
                     Method m = model.getClass().getMethod(mn);
                     Object r = m.invoke(model);
                     if (r instanceof List) {
-                        for (Object o : (List<?>) r) if (o != null) out.add(normalizeDriveUrl(String.valueOf(o)));
+                        for (Object o : (List<?>) r) if (o != null) out.add(String.valueOf(o));
                         if (!out.isEmpty()) return out;
                     }
                 } catch (NoSuchMethodException ignored) {}
@@ -363,7 +399,7 @@ public class DetailActivity extends AppCompatActivity {
                     f.setAccessible(true);
                     Object val = f.get(model);
                     if (val instanceof List) {
-                        for (Object o : (List<?>) val) if (o != null) out.add(normalizeDriveUrl(String.valueOf(o)));
+                        for (Object o : (List<?>) val) if (o != null) out.add(String.valueOf(o));
                         if (!out.isEmpty()) return out;
                     }
                 } catch (Exception ignored) {}
@@ -372,7 +408,7 @@ public class DetailActivity extends AppCompatActivity {
                 try {
                     Method mi = model.getClass().getMethod("getImage"+i);
                     Object r = mi.invoke(model);
-                    if (r != null) out.add(normalizeDriveUrl(String.valueOf(r)));
+                    if (r != null) out.add(String.valueOf(r));
                 } catch (NoSuchMethodException ignored) {}
             }
         } catch (Exception e) {
@@ -381,29 +417,29 @@ public class DetailActivity extends AppCompatActivity {
         return out;
     }
 
-    // normalize Drive link -> try direct download/view endpoint
     private String normalizeDriveUrl(String input) {
         if (input == null) return null;
         input = input.trim();
-        if (input.contains("drive.google.com/uc?export=view") || input.contains("drive.google.com/uc?export=download")) return input;
+        if (input.contains("drive.google.com/uc?export=view")) return input;
         Pattern p = Pattern.compile("/d/([a-zA-Z0-9_-]+)");
         Matcher m = p.matcher(input);
-        if (m.find()) return "https://drive.google.com/uc?export=download&id=" + m.group(1);
+        if (m.find()) return "https://drive.google.com/uc?export=view&id=" + m.group(1);
         p = Pattern.compile("[?&]id=([a-zA-Z0-9_-]+)");
         m = p.matcher(input);
-        if (m.find()) return "https://drive.google.com/uc?export=download&id=" + m.group(1);
+        if (m.find()) return "https://drive.google.com/uc?export=view&id=" + m.group(1);
         p = Pattern.compile("open\\?id=([a-zA-Z0-9_-]+)");
         m = p.matcher(input);
-        if (m.find()) return "https://drive.google.com/uc?export=download&id=" + m.group(1);
+        if (m.find()) return "https://drive.google.com/uc?export=view&id=" + m.group(1);
         return input;
     }
 
+    // Robust fetch that normalizes all URLs and logs everything
     private void fetchImagesFromFirestore(@NonNull String collection, @NonNull String docId) {
         Log.d(TAG, "fetchImagesFromFirestore -> collection=" + collection + " docId=" + docId);
         firestore.collection(collection).document(docId)
                 .get()
                 .addOnSuccessListener((DocumentSnapshot documentSnapshot) -> {
-                    Log.d(TAG, "Firestore doc fetched, exists=" + documentSnapshot.exists());
+                    Log.d(TAG, "Firestore fetched: exists=" + documentSnapshot.exists());
                     if (!documentSnapshot.exists()) {
                         Toast.makeText(DetailActivity.this, "Data tidak ditemukan.", Toast.LENGTH_SHORT).show();
                         return;
@@ -411,50 +447,91 @@ public class DetailActivity extends AppCompatActivity {
 
                     ArrayList<String> urls = new ArrayList<>();
 
-                    Object main = documentSnapshot.get("imageUrl");
-                    Log.d(TAG, "raw imageUrl field class=" + (main != null ? main.getClass().getSimpleName() : "null") + " value=" + String.valueOf(main));
-                    if (main instanceof List) {
-                        for (Object o : (List<?>) main) {
-                            if (o == null) continue;
-                            String s = String.valueOf(o).trim();
-                            if (!s.isEmpty()) urls.add(normalizeDriveUrl(s));
-                        }
-                    } else if (main instanceof String) {
-                        String s = ((String) main).trim();
-                        if (s.startsWith("[") && s.endsWith("]")) {
-                            try {
-                                JSONArray ja = new JSONArray(s);
-                                for (int i=0;i<ja.length();i++){
-                                    String u = ja.optString(i, null);
-                                    if (u != null && !u.trim().isEmpty()) urls.add(normalizeDriveUrl(u));
-                                }
-                            } catch (JSONException je) {
+                    // TRY typed List
+                    try {
+                        List<?> typed = documentSnapshot.get("imageUrl", List.class);
+                        if (typed != null && !typed.isEmpty()) {
+                            Log.d(TAG, "imageUrl typed List size=" + typed.size());
+                            for (Object o : typed) {
+                                if (o == null) continue;
+                                String s = String.valueOf(o).trim();
                                 if (!s.isEmpty()) urls.add(normalizeDriveUrl(s));
                             }
-                        } else {
-                            if (!s.isEmpty()) urls.add(normalizeDriveUrl(s));
+                        }
+                    } catch (Exception e) {
+                        Log.w(TAG, "typed List retrieval failed: " + e.getMessage());
+                    }
+
+                    // fallback raw parsing
+                    if (urls.isEmpty()) {
+                        Object raw = documentSnapshot.get("imageUrl");
+                        Log.d(TAG, "raw imageUrl class=" + (raw != null ? raw.getClass().getSimpleName() : "null") + " value=" + String.valueOf(raw));
+                        if (raw instanceof List) {
+                            for (Object o : (List<?>) raw) {
+                                if (o == null) continue;
+                                String s = String.valueOf(o).trim();
+                                if (!s.isEmpty()) urls.add(normalizeDriveUrl(s));
+                            }
+                        } else if (raw instanceof String) {
+                            String s = ((String) raw).trim();
+                            if (s.startsWith("[") && s.endsWith("]")) {
+                                try {
+                                    JSONArray ja = new JSONArray(s);
+                                    for (int k = 0; k < ja.length(); k++) {
+                                        String u = ja.optString(k, null);
+                                        if (u != null && !u.trim().isEmpty()) urls.add(normalizeDriveUrl(u));
+                                    }
+                                    Log.d(TAG, "parsed JSON-string array count=" + urls.size());
+                                } catch (JSONException je) {
+                                    urls.add(normalizeDriveUrl(s));
+                                }
+                            } else {
+                                urls.add(normalizeDriveUrl(s));
+                            }
                         }
                     }
 
+                    // try 'images' field as last fallback
                     if (urls.isEmpty()) {
                         Object imagesField = documentSnapshot.get("images");
+                        Log.d(TAG, "raw images field class=" + (imagesField != null ? imagesField.getClass().getSimpleName() : "null"));
                         if (imagesField instanceof List) {
                             for (Object o : (List<?>) imagesField) {
                                 if (o == null) continue;
                                 String s = String.valueOf(o).trim();
                                 if (!s.isEmpty()) urls.add(normalizeDriveUrl(s));
                             }
+                        } else if (imagesField instanceof String) {
+                            String s = ((String) imagesField).trim();
+                            if (s.startsWith("[") && s.endsWith("]")) {
+                                try {
+                                    JSONArray ja = new JSONArray(s);
+                                    for (int k = 0; k < ja.length(); k++) {
+                                        String u = ja.optString(k, null);
+                                        if (u != null && !u.trim().isEmpty()) urls.add(normalizeDriveUrl(u));
+                                    }
+                                } catch (JSONException ignored) {
+                                    urls.add(normalizeDriveUrl(s));
+                                }
+                            } else {
+                                urls.add(normalizeDriveUrl(s));
+                            }
                         }
                     }
 
                     Log.d(TAG, "urls collected before dedup size=" + urls.size());
-                    for (int i=0;i<urls.size();i++) Log.d(TAG, "urls[" + i + "] = " + urls.get(i));
+                    for (int idx = 0; idx < urls.size(); idx++) Log.d(TAG, "urls[" + idx + "] = " + urls.get(idx));
 
+                    // Di dalam onAddOnSuccessListener, bagian akhir setelah dedup:
                     if (!urls.isEmpty()) {
+                        // dedup preserve order
                         Set<String> dedup = new LinkedHashSet<>(urls);
                         ArrayList<String> finalList = new ArrayList<>(dedup);
                         Log.d(TAG, "finalList size after dedup=" + finalList.size());
-                        updateGallery(finalList);
+
+                        // GANTI INI: updateGallery(finalList);
+                        // MENJADI:
+                        updateGalleryForTab(finalList);
                     } else {
                         if (recyclerGallery != null) recyclerGallery.setVisibility(View.GONE);
                         Toast.makeText(DetailActivity.this, "Tidak ada foto untuk galeri.", Toast.LENGTH_SHORT).show();
@@ -469,41 +546,116 @@ public class DetailActivity extends AppCompatActivity {
     private void updateGallery(ArrayList<String> urls) {
         Log.d(TAG, "updateGallery called with urls.size=" + (urls != null ? urls.size() : 0));
         if (recyclerGallery == null || galleryAdapter == null) {
-            Log.w(TAG, "updateGallery: recycler or adapter null");
+            Log.w(TAG, "updateGallery: recyclerGallery or adapter null");
             return;
         }
+
         runOnUiThread(() -> {
-            galleryAdapter.setItems(urls);
-            recyclerGallery.setVisibility(urls.isEmpty() ? View.GONE : View.VISIBLE);
-            Log.d(TAG, "adapter itemCount after setItems = " + galleryAdapter.getItemCount());
-            if (galleryAdapter.getItemCount() == 0) Toast.makeText(this, "Gallery empty after setItems", Toast.LENGTH_LONG).show();
+            // Normalisasi semua URLs
+            ArrayList<String> normalized = new ArrayList<>();
+            if (urls != null) {
+                for (String u : urls) normalized.add(normalizeDriveUrl(u));
+            }
+
+            // Update adapter (tapi jangan ubah visibility karena ini prefetch)
+            galleryAdapter.setItems(normalized);
+
+            Log.d(TAG, "updateGallery: data loaded, adapter.getItemCount() = " + galleryAdapter.getItemCount());
+            // JANGAN ubah visibility di sini karena default view adalah Info tab
         });
     }
 
     private void showInfoTab() {
         if (recyclerGallery != null) recyclerGallery.setVisibility(View.GONE);
-        View info = findViewById(R.id.contentContainer);
+        View info = findViewById(R.id.infoContainer);
         if (info != null) info.setVisibility(View.VISIBLE);
         View reviews = findViewById(R.id.reviewsContainer);
         if (reviews != null) reviews.setVisibility(View.GONE);
     }
 
     private void showGalleryTab() {
+        // Cek apakah sudah ada data di adapter
         if (galleryAdapter != null && galleryAdapter.getItemCount() > 0) {
+            // Sudah ada data, langsung tampilkan
             recyclerGallery.setVisibility(View.VISIBLE);
-            View info = findViewById(R.id.contentContainer);
+            View info = findViewById(R.id.infoContainer);
             if (info != null) info.setVisibility(View.GONE);
+            View reviews = findViewById(R.id.reviewsContainer);
+            if (reviews != null) reviews.setVisibility(View.GONE);
+            Log.d(TAG, "showGalleryTab: displaying " + galleryAdapter.getItemCount() + " images");
             return;
         }
-        String collection = firstNonNullExtra(EXTRA_COLLECTION, "collection", "coll");
-        String docId = firstNonNullExtra(EXTRA_DOCID, "docId", "id", "documentId");
+
+        // Belum ada data, coba fetch
+        Log.d(TAG, "showGalleryTab: no data yet, attempting fetch");
+
+        // Coba dari model dulu
+        ArrayList<String> fromModel = getImageListFromModel(currentModel);
+        if (!fromModel.isEmpty()) {
+            Log.d(TAG, "showGalleryTab: found images in model: " + fromModel.size());
+            ArrayList<String> norm = new ArrayList<>();
+            for (String u : fromModel) norm.add(normalizeDriveUrl(u));
+            updateGalleryForTab(norm);
+            return;
+        }
+
+        // Coba dari Firestore
+        String collection = firstNonNullExtra(EXTRA_COLLECTION, "collection", "coll", "type");
+        String docId = firstNonNullExtra(EXTRA_DOCID, "docId", "doc_id", "id", "documentId");
         if (collection != null && docId != null) {
+            Log.d(TAG, "showGalleryTab: fetching from Firestore");
             fetchImagesFromFirestore(collection, docId);
         } else {
-            ArrayList<String> fromModel = getImageListFromModel(currentModel);
-            if (!fromModel.isEmpty()) updateGallery(fromModel);
-            else Toast.makeText(this, "Tidak ada foto untuk galeri.", Toast.LENGTH_SHORT).show();
+            // Fallback ke gambar utama jika ada
+            String main = firstNonNullExtra("imageUrl", "image", "mainImage", "photo");
+            if (main != null && !main.trim().isEmpty()) {
+                ArrayList<String> tmp = new ArrayList<>();
+                tmp.add(normalizeDriveUrl(main.trim()));
+                updateGalleryForTab(tmp);
+            } else {
+                Toast.makeText(this, "Tidak ada foto untuk galeri.", Toast.LENGTH_SHORT).show();
+                showInfoTab(); // kembali ke info
+            }
         }
+    }
+
+    private void updateGalleryForTab(ArrayList<String> urls) {
+        Log.d(TAG, "updateGalleryForTab called with urls.size=" + (urls != null ? urls.size() : 0));
+        if (recyclerGallery == null || galleryAdapter == null) {
+            Log.w(TAG, "updateGalleryForTab: recyclerGallery or adapter null");
+            return;
+        }
+
+        runOnUiThread(() -> {
+            ArrayList<String> normalized = new ArrayList<>();
+            if (urls != null) {
+                for (String u : urls) normalized.add(normalizeDriveUrl(u));
+            }
+
+            galleryAdapter.setItems(normalized);
+            recyclerGallery.setVisibility(normalized.isEmpty() ? View.GONE : View.VISIBLE);
+
+            // Sembunyikan container lain untuk tab gallery
+            View info = findViewById(R.id.infoContainer);
+            if (info != null) info.setVisibility(View.GONE);
+            View reviews = findViewById(R.id.reviewsContainer);
+            if (reviews != null) reviews.setVisibility(View.GONE);
+
+            Log.d(TAG, "updateGalleryForTab: adapter.getItemCount() = " + galleryAdapter.getItemCount());
+
+            if (normalized.isEmpty()) {
+                Toast.makeText(DetailActivity.this, "Tidak ada foto untuk galeri.", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void showReviewsTab() {
+        if (recyclerGallery != null) recyclerGallery.setVisibility(View.GONE);
+        View info = findViewById(R.id.infoContainer);
+        if (info != null) info.setVisibility(View.GONE);
+        View reviews = findViewById(R.id.reviewsContainer);
+        if (reviews != null) reviews.setVisibility(View.VISIBLE);
+        Toast.makeText(this, "Tab Ulasan belum diimplementasikan.", Toast.LENGTH_SHORT).show();
     }
 
     private String formatPrice(int price) {
@@ -514,37 +666,5 @@ public class DetailActivity extends AppCompatActivity {
             return s;
         } catch (Exception ignored) {}
         return String.valueOf(price);
-    }
-
-    // reflection helpers
-    private String safeGetString(Object obj, String methodName) {
-        try {
-            Method m = obj.getClass().getMethod(methodName);
-            Object r = m.invoke(obj);
-            return r != null ? String.valueOf(r) : null;
-        } catch (Exception ignored) {}
-        return null;
-    }
-    private Double safeGetDouble(Object obj, String methodName) {
-        try {
-            Method m = obj.getClass().getMethod(methodName);
-            Object r = m.invoke(obj);
-            if (r instanceof Number) return ((Number) r).doubleValue();
-            if (r instanceof String) {
-                try { return Double.parseDouble(((String) r).trim()); } catch (NumberFormatException ignored) {}
-            }
-        } catch (Exception ignored) {}
-        return null;
-    }
-    private Integer safeGetInt(Object obj, String methodName) {
-        try {
-            Method m = obj.getClass().getMethod(methodName);
-            Object r = m.invoke(obj);
-            if (r instanceof Number) return ((Number) r).intValue();
-            if (r instanceof String) {
-                try { return Integer.parseInt(((String) r).trim()); } catch (NumberFormatException ignored) {}
-            }
-        } catch (Exception ignored) {}
-        return null;
     }
 }

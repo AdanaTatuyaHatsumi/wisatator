@@ -326,6 +326,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 card.setOnClickListener(v -> {
                     Intent i = new Intent(MainActivity.this, DetailActivity.class);
                     i.putExtra("wisata", top);
+
+                    // 🔥 TAMBAHKAN INI - kirim collection dan docId untuk fetch gallery
+                    i.putExtra(DetailActivity.EXTRA_COLLECTION, "wisata");
+                    i.putExtra(DetailActivity.EXTRA_DOCID, top.getId());
+
                     if (top.getImageUrl() != null) i.putExtra("imageUrl", normalizeDriveUrl(top.getImageUrl()));
                     startActivity(i);
                 });

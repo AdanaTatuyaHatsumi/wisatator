@@ -76,6 +76,11 @@ public class PenginapanAdapter extends RecyclerView.Adapter<PenginapanAdapter.Vi
         holder.itemView.setOnClickListener(v -> {
             Intent i = new Intent(context, DetailActivity.class);
             i.putExtra("penginapan", p);
+
+            // 🔥 TAMBAHKAN INI
+            i.putExtra(DetailActivity.EXTRA_COLLECTION, "penginapan");
+            i.putExtra(DetailActivity.EXTRA_DOCID, String.valueOf(p.getId()));
+
             context.startActivity(i);
         });
     }

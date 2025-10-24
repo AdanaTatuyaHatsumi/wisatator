@@ -76,6 +76,11 @@ public class KulinerAdapter extends RecyclerView.Adapter<KulinerAdapter.ViewHold
         holder.itemView.setOnClickListener(v -> {
             Intent i = new Intent(context, DetailActivity.class);
             i.putExtra("kuliner", k);
+
+            // 🔥 TAMBAHKAN INI
+            i.putExtra(DetailActivity.EXTRA_COLLECTION, "kuliner");
+            i.putExtra(DetailActivity.EXTRA_DOCID, String.valueOf(k.getId()));
+
             context.startActivity(i);
         });
     }
